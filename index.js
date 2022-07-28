@@ -3,6 +3,11 @@ const github = require("@actions/github");
 
 console.log("Hello from index.js");
 
+const context = github.context;
+console.log(`This is the github context: \n ${context}`);
+console.log(context.actor);
+console.log(context.ref);
+
 try {
   const nameToGreet = core.getInput("who-to-greet");
   console.log(`Hello ${nameToGreet}!`);
