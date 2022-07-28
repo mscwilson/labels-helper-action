@@ -1,0 +1,24 @@
+{
+  "name": "labels-helper-action",
+  "version": "1.0.0",
+  "description": "Github Action to add labels to issues",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mscwilson/labels-helper-action.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mscwilson/labels-helper-action/issues"
+  },
+  "homepage": "https://github.com/mscwilson/labels-helper-action#readme",
+  "dependencies": {
+    "@actions/core": "^1.9.0",
+    "@actions/github": "^5.0.3"
+  }
+}
