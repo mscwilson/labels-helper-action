@@ -10,24 +10,39 @@ const commitRegex =
 async function run() {
   const octokit = github.getOctokit(process.env.ACCESS_TOKEN);
 
-  // const accessToken = core.getInput("ACCESS_TOKEN");
-  // const octokit = github.getOctokit(accessToken);
-  // const octokit = github.getOctokit(process.env.PAT);
   // const owner = "mscwilson";
   // const repo = "try-out-actions-here";
   // const branchName = "release/0.2.0";
   // const issueNumber = 5;
 
   const context = github.context;
-
-  console.log(context);
-
   const owner = context.repo.owner;
   const repo = context.repo.repo;
 
   const branchName = context.ref.replace("refs/heads/", "");
   const branchType = branchName.split("/")[0];
 
+  switch (branchType) {
+    case "release":
+      console.log("Release branch discovered.");
+      completedIssue(octokit, owner, repo);
+      break;
+    case "issue":
+      console.log("Issue branch discovered.");
+      break;
+    case "main":
+    case "master":
+      console.log("Main/master branch.");
+      break;
+    default:
+      console.log("What's this random branch?");
+  }
+
+}
+
+run();
+
+function completedIssue(octokit, owner, repo) {
   const { data: commits } = await octokit.rest.repos.listCommits({
     owner: owner,
     repo: repo,
@@ -70,8 +85,6 @@ async function run() {
     // that's fine
   }
 }
-
-run();
 
 // try {
 
