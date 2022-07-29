@@ -14,22 +14,30 @@ async function run() {
   // const branchName = "release/0.2.0";
   // const issueNumber = 5;
 
+  // issueHasPr(octokit, owner, repo, 84);
+
   const context = github.context;
+  console.log(context.ref);
+
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   const event = context.eventName;
-  console.log("really?");
 
-  console.log(context.issue.number);
-  console.log(context.issue.owner);
-  console.log(context.issue.repo);
+  const branchName = context.ref.split("/")[3];
 
-  console.log(`The event was ${event}`);
+  console.log(`Is this a PR? ${context.ref.split("/")[1]}`);
 
-  const branchName = context.ref.replace("refs/heads/", "");
-  const branchType = branchName.split("/")[0];
+  //  && event === "create"
 
-  switch (branchType) {
+  // ref for pull looks like "refs/pull/19/merge"
+  if (context.ref.split("/")[1] === "pull") {
+    console.log("A pull request was opened");
+    issueHasPr(octokit, owner, repo, context.ref.split("/")[2]);
+    return;
+  }
+  // ref for a normal push looks like "refs/heads/branch-name"
+  // so in this case, "refs/heads/issue/123-branch" or "refs/heads/release/0.1.2"
+  switch (context.ref.split("/")[2]) {
     case "release":
       console.log("Release branch discovered.");
       completedIssue(octokit, owner, repo, branchName);
@@ -39,7 +47,6 @@ async function run() {
       if (event === "create") {
         issueInProgress(octokit, owner, repo, branchName);
       }
-
       break;
     case "main":
     case "master":
@@ -52,6 +59,42 @@ async function run() {
 
 run();
 
+async function addLabelToIssue(octokit, owner, repo, issueNumber, label) {
+  try {
+    await octokit.rest.issues.addLabels({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      labels: [label],
+    });
+  } catch (error) {
+    console.log(`Couldn't find issue #${issueNumber}`);
+  }
+}
+
+async function issueHasPr(octokit, owner, repo, pullNumber) {
+  try {
+    const { data: pull } = await octokit.rest.pulls.get({
+      owner: owner,
+      repo: repo,
+      pull_number: pullNumber,
+    });
+    const branchName = pull.head.ref;
+    console.log(branchName);
+
+    let issueNumber;
+    try {
+      issueNumber = branchName.match(branchRegex)[1];
+    } catch {
+      console.log(`Couldn't find an issue number in "${branchName}"`);
+      return;
+    }
+    addLabelToIssue(octokit, owner, repo, issueNumber, "status:has_pr");
+  } catch {
+    console.log(`Failed to find PR ${pullNumber}`);
+  }
+}
+
 async function issueInProgress(octokit, owner, repo, branchName) {
   let issueNumber;
   try {
@@ -61,16 +104,7 @@ async function issueInProgress(octokit, owner, repo, branchName) {
     return;
   }
 
-  try {
-    await octokit.rest.issues.addLabels({
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      labels: ["status:in_progress"],
-    });
-  } catch (error) {
-    console.log(`Couldn't find issue #${issueNumber}`);
-  }
+  addLabelToIssue(octokit, owner, repo, issueNumber, "status:in_progress");
 }
 
 async function completedIssue(octokit, owner, repo, branchName) {
@@ -89,65 +123,20 @@ async function completedIssue(octokit, owner, repo, branchName) {
     return;
   }
 
-  try {
-    await octokit.rest.issues.addLabels({
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      labels: ["status:completed"],
-    });
-  } catch (error) {
-    console.log(`Couldn't find issue #${issueNumber}`);
-  }
+  addLabelToIssue(octokit, owner, repo, issueNumber, "status:completed");
+  removeLabelFromIssue(octokit, owner, repo, issueNumber, "status:in_progress");
+  removeLabelFromIssue(octokit, owner, repo, issueNumber, "status:has_pr");
+}
 
+async function removeLabelFromIssue(octokit, owner, repo, issueNumber, label) {
   try {
     await octokit.rest.issues.removeLabel({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
-      name: "status:in_progress",
-    });
-  } catch (RequestError) {
-    // that's fine
-  }
-
-  try {
-    await octokit.rest.issues.removeLabel({
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      name: "status:has_pr",
+      name: label,
     });
   } catch (RequestError) {
     // that's fine
   }
 }
-
-// try {
-
-//   console.log(`branch name is: ${branchName}`);
-//   switch (branchType) {
-//     case "release":
-//       console.log("it's a release branch!");
-//       break;
-//     case "issue":
-//       console.log("it's an issue branch!");
-//       break;
-//     case "main":
-//     case "master":
-//       console.log("we're on main street");
-//       break;
-//     default:
-//       console.log("what's this random branch?");
-//   }
-
-//   const nameToGreet = core.getInput("who-to-greet");
-//   console.log(`Hello ${nameToGreet}!`);
-//   const time = new Date().toTimeString();
-//   core.setOutput("time", time);
-
-//   const payload = JSON.stringify(github.context.payload, undefined, 2);
-//   console.log(`The event payload: ${payload}`);
-// } catch (error) {
-//   core.setFailed(error.message);
-// }
