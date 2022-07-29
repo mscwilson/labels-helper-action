@@ -68,6 +68,7 @@ async function addLabelToIssue(octokit, owner, repo, issueNumber, label) {
       issue_number: issueNumber,
       labels: [label],
     });
+    console.log(`${label} added to issue #${issueNumber}`);
   } catch (error) {
     console.log(`Couldn't find issue #${issueNumber}`);
   }
@@ -137,6 +138,7 @@ async function removeLabelFromIssue(octokit, owner, repo, issueNumber, label) {
       issue_number: issueNumber,
       name: label,
     });
+    console.log(`${label} removed from issue #${issueNumber}`);
   } catch (RequestError) {
     // that's fine
   }
