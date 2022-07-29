@@ -2,8 +2,6 @@ require("dotenv").config();
 const core = require("@actions/core");
 const github = require("@actions/github");
 
-console.log("Hello from index.js");
-
 const commitRegex =
   /^([\w\s.,'"-:`@]+) \((?:close|closes|fixes|fix) \#(\d+)\)$/;
 const branchRegex = /^issue\/(\d+)/;
@@ -20,6 +18,8 @@ async function run() {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   const event = context.eventName;
+
+  console.log(`The event was ${event}`);
 
   const branchName = context.ref.replace("refs/heads/", "");
   const branchType = branchName.split("/")[0];
