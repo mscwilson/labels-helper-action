@@ -41,7 +41,7 @@ async function run() {
 
 run();
 
-async function completedIssue(octokit, owner, repo) {
+async function completedIssue(octokit, owner, repo, branchName) {
   const { data: commits } = await octokit.rest.repos.listCommits({
     owner: owner,
     repo: repo,
