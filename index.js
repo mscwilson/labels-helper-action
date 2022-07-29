@@ -52,6 +52,7 @@ async function issueInProgress(octokit, owner, repo, branchName) {
     issueNumber = branchName.match(branchRegex)[1];
   } catch {
     console.log(`Couldn't find an issue number in "${branchName}"`);
+    return;
   }
   console.log(issueNumber);
 
@@ -80,6 +81,7 @@ async function completedIssue(octokit, owner, repo, branchName) {
     issueNumber = commitMessage.match(commitRegex)[2];
   } catch {
     console.log(`Couldn't find an issue number in "${commitMessage}"`);
+    return;
   }
 
   try {
