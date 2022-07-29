@@ -24,30 +24,33 @@ async function run() {
   const repo = context.repo.repo;
   const event = context.eventName;
 
-  const branchName = context.ref.split("/")[3];
+  const refType = context.ref.split("/")[1];
 
-  console.log(`Is this a PR? ${context.ref.split("/")[1]}`);
+  console.log(`Is this a PR? ${refType}`);
   console.log(`The event is a ${event}`);
 
-  //  && event === "create"
-
   // ref for pull looks like "refs/pull/19/merge"
-  if (context.ref.split("/")[1] === "pull") {
+  if (refType === "pull") {
     console.log("A pull request was opened");
     issueHasPr(octokit, owner, repo, context.ref.split("/")[2]);
     return;
   }
+
   // ref for a normal push looks like "refs/heads/branch-name"
   // so in this case, "refs/heads/issue/123-branch" or "refs/heads/release/0.1.2"
-  switch (context.ref.split("/")[2]) {
+  const branchType = context.ref.split("/")[2];
+  const fullBranchName = context.ref.replace("refs/heads/", "");
+  const suffixBranchName = context.ref.split("/")[3];
+
+  switch (branchType) {
     case "release":
       console.log("Release branch discovered.");
-      completedIssue(octokit, owner, repo, branchName);
+      completedIssue(octokit, owner, repo, fullBranchName);
       break;
     case "issue":
       console.log("Issue branch discovered.");
       if (event === "create") {
-        issueInProgress(octokit, owner, repo, branchName);
+        issueInProgress(octokit, owner, repo, fullBranchName);
       }
       break;
     case "main":
@@ -60,20 +63,6 @@ async function run() {
 }
 
 run();
-
-async function addLabelToIssue(octokit, owner, repo, issueNumber, label) {
-  try {
-    await octokit.rest.issues.addLabels({
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      labels: [label],
-    });
-    console.log(`${label} added to issue #${issueNumber}`);
-  } catch (error) {
-    console.log(`Couldn't find issue #${issueNumber}`);
-  }
-}
 
 async function issueHasPr(octokit, owner, repo, pullNumber) {
   try {
@@ -98,27 +87,33 @@ async function issueHasPr(octokit, owner, repo, pullNumber) {
   }
 }
 
-async function issueInProgress(octokit, owner, repo, branchName) {
+async function issueInProgress(octokit, owner, repo, fullBranchName) {
   let issueNumber;
   try {
-    issueNumber = branchName.match(branchRegex)[1];
+    issueNumber = fullBranchName.match(issueBranchRegex)[1];
   } catch {
-    console.log(`Couldn't find an issue number in "${branchName}"`);
+    console.log(`Couldn't find an issue number in "${fullBranchName}"`);
     return;
   }
 
   addLabelToIssue(octokit, owner, repo, issueNumber, "status:in_progress");
 }
 
-async function completedIssue(octokit, owner, repo, branchName) {
-  const { data: commits } = await octokit.rest.repos.listCommits({
-    owner: owner,
-    repo: repo,
-    sha: branchName,
-  });
-
-  const commitMessage = commits[0].commit.message;
+async function completedIssue(octokit, owner, repo, fullBranchName) {
+  let commitMessage;
   let issueNumber;
+
+  try {
+    const { data: commits } = await octokit.rest.repos.listCommits({
+      owner: owner,
+      repo: repo,
+      sha: fullBranchName,
+    });
+    commitMessage = commits[0].commit.message;
+  } catch (error) {
+    console.log("Couldn't find any commits");
+  }
+
   try {
     issueNumber = commitMessage.match(commitRegex)[2];
   } catch {
@@ -129,6 +124,20 @@ async function completedIssue(octokit, owner, repo, branchName) {
   addLabelToIssue(octokit, owner, repo, issueNumber, "status:completed");
   removeLabelFromIssue(octokit, owner, repo, issueNumber, "status:in_progress");
   removeLabelFromIssue(octokit, owner, repo, issueNumber, "status:has_pr");
+}
+
+async function addLabelToIssue(octokit, owner, repo, issueNumber, label) {
+  try {
+    await octokit.rest.issues.addLabels({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      labels: [label],
+    });
+    console.log(`${label} added to issue #${issueNumber}`);
+  } catch (error) {
+    console.log(`Couldn't find issue #${issueNumber}`);
+  }
 }
 
 async function removeLabelFromIssue(octokit, owner, repo, issueNumber, label) {
