@@ -47,7 +47,12 @@ async function run() {
 run();
 
 async function issueInProgress(octokit, owner, repo, branchName) {
-  const issueNumber = branchName.match(branchRegex)[1];
+  let issueNumber;
+  try {
+    issueNumber = branchName.match(branchRegex)[1];
+  } catch {
+    console.log(`Couldn't find an issue number in "${branchName}"`);
+  }
   console.log(issueNumber);
 
   try {
@@ -70,7 +75,12 @@ async function completedIssue(octokit, owner, repo, branchName) {
   });
 
   const commitMessage = commits[0].commit.message;
-  const issueNumber = commitMessage.match(commitRegex)[2];
+  let issueNumber;
+  try {
+    issueNumber = commitMessage.match(commitRegex)[2];
+  } catch {
+    console.log(`Couldn't find an issue number in "${commitMessage}"`);
+  }
 
   try {
     await octokit.rest.issues.addLabels({
