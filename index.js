@@ -4,6 +4,7 @@ const github = require("@actions/github");
 
 const commitRegex =
   /^([\w\s.,'"-:`@]+) \((?:close|closes|fixes|fix) \#(\d+)\)$/;
+const issueBranchRegex = /^issue\/(\d+)/;
 const branchRegex = /^(\d+)/;
 
 async function run() {
@@ -86,7 +87,7 @@ async function issueHasPr(octokit, owner, repo, pullNumber) {
 
     let issueNumber;
     try {
-      issueNumber = branchName.match(branchRegex)[1];
+      issueNumber = branchName.match(issueBranchRegex)[1];
     } catch {
       console.log(`Couldn't find an issue number in "${branchName}"`);
       return;
