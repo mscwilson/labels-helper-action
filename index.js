@@ -6,6 +6,7 @@ console.log("Hello from index.js");
 
 const commitRegex =
   /^([\w\s.,'"-:`@]+) \((?:close|closes|fixes|fix) \#(\d+)\)$/;
+const branchRegex = /^issue\/(\d+)/;
 
 async function run() {
   const octokit = github.getOctokit(process.env.ACCESS_TOKEN);
@@ -18,6 +19,7 @@ async function run() {
   const context = github.context;
   const owner = context.repo.owner;
   const repo = context.repo.repo;
+  const event = context.eventName;
 
   const branchName = context.ref.replace("refs/heads/", "");
   const branchType = branchName.split("/")[0];
@@ -29,6 +31,9 @@ async function run() {
       break;
     case "issue":
       console.log("Issue branch discovered.");
+      console.log(`The event was ${event}`);
+
+      issueInProgress(octokit, owner, repo, branchName);
       break;
     case "main":
     case "master":
@@ -40,6 +45,22 @@ async function run() {
 }
 
 run();
+
+async function issueInProgress(octokit, owner, repo, branchName) {
+  const issueNumber = branchName.match(branchRegex)[1];
+  console.log(issueNumber);
+
+  try {
+    await octokit.rest.issues.addLabels({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      labels: ["status:in_progress"],
+    });
+  } catch (error) {
+    console.log(`Couldn't find issue #${issueNumber}`);
+  }
+}
 
 async function completedIssue(octokit, owner, repo, branchName) {
   const { data: commits } = await octokit.rest.repos.listCommits({
