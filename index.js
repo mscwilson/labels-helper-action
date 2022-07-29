@@ -19,8 +19,11 @@ async function run() {
   // const issueNumber = 5;
 
   const context = github.context;
-  const owner = context.repository.owner.name;
-  const repo = context.repository.name;
+
+  console.log(context);
+
+  const owner = context.repo.owner;
+  const repo = context.repo.repo;
 
   const branchName = context.ref.replace("refs/heads/", "");
   const branchType = branchName.split("/")[0];
