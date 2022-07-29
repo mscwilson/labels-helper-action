@@ -4,7 +4,7 @@ const github = require("@actions/github");
 
 const commitRegex =
   /^([\w\s.,'"-:`@]+) \((?:close|closes|fixes|fix) \#(\d+)\)$/;
-const branchRegex = /^issue\/(\d+)/;
+const branchRegex = /^(\d+)/;
 
 async function run() {
   const octokit = github.getOctokit(process.env.ACCESS_TOKEN);
@@ -26,6 +26,7 @@ async function run() {
   const branchName = context.ref.split("/")[3];
 
   console.log(`Is this a PR? ${context.ref.split("/")[1]}`);
+  console.log(`The event is a ${event}`);
 
   //  && event === "create"
 
