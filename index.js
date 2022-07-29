@@ -25,7 +25,7 @@ async function run() {
   switch (branchType) {
     case "release":
       console.log("Release branch discovered.");
-      completedIssue(octokit, owner, repo);
+      completedIssue(octokit, owner, repo, branchName);
       break;
     case "issue":
       console.log("Issue branch discovered.");
