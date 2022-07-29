@@ -18,6 +18,11 @@ async function run() {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   const event = context.eventName;
+  console.log("really?");
+
+  console.log(context.issue.number);
+  console.log(context.issue.owner);
+  console.log(context.issue.repo);
 
   console.log(`The event was ${event}`);
 
@@ -31,9 +36,10 @@ async function run() {
       break;
     case "issue":
       console.log("Issue branch discovered.");
-      console.log(`The event was ${event}`);
+      if (event === "create") {
+        issueInProgress(octokit, owner, repo, branchName);
+      }
 
-      issueInProgress(octokit, owner, repo, branchName);
       break;
     case "main":
     case "master":
@@ -54,7 +60,6 @@ async function issueInProgress(octokit, owner, repo, branchName) {
     console.log(`Couldn't find an issue number in "${branchName}"`);
     return;
   }
-  console.log(issueNumber);
 
   try {
     await octokit.rest.issues.addLabels({
