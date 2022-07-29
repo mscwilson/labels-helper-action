@@ -37,12 +37,11 @@ async function run() {
     default:
       console.log("What's this random branch?");
   }
-
 }
 
 run();
 
-function completedIssue(octokit, owner, repo) {
+async function completedIssue(octokit, owner, repo) {
   const { data: commits } = await octokit.rest.repos.listCommits({
     owner: owner,
     repo: repo,
