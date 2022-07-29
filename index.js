@@ -8,8 +8,10 @@ const commitRegex =
   /^([\w\s.,'"-:`@]+) \((?:close|closes|fixes|fix) \#(\d+)\)$/;
 
 async function run() {
-  const accessToken = core.getInput("ACCESS_TOKEN");
-  const octokit = github.getOctokit(accessToken);
+  const octokit = github.getOctokit(process.env.ACCESS_TOKEN);
+
+  // const accessToken = core.getInput("ACCESS_TOKEN");
+  // const octokit = github.getOctokit(accessToken);
   // const octokit = github.getOctokit(process.env.PAT);
   // const owner = "mscwilson";
   // const repo = "try-out-actions-here";
