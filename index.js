@@ -4,51 +4,36 @@ const github = require("@actions/github");
 
 const commitRegex = /^([\w\s.,'"-:`@]+) \((?:close|closes|fixes|fix) \#(\d+)\)/;
 const issueBranchRegex = /^issue\/(\d+)/;
-const branchRegex = /^(\d+)/;
 
 async function run() {
   const octokit = github.getOctokit(process.env.ACCESS_TOKEN);
 
-  // const owner = "mscwilson";
-  // const repo = "try-out-actions-here";
-  // const branchName = "release/0.2.0";
-  // const issueNumber = 5;
-
-  // issueHasPr(octokit, owner, repo, 84);
-
   const context = github.context;
-  console.log(context.ref);
-
   const owner = context.repo.owner;
   const repo = context.repo.repo;
-  const event = context.eventName;
-
-  const refType = context.ref.split("/")[1];
-
-  console.log(`Is this a PR? ${refType}`);
-  console.log(`The event is a ${event}`);
 
   // ref for pull looks like "refs/pull/19/merge"
+  // ref for a normal push looks like "refs/heads/branch-name"
+  // e.g. "refs/heads/issue/123-branch" or "refs/heads/release/0.1.2"
+  const refType = context.ref.split("/")[1];
+
   if (refType === "pull") {
     console.log("A pull request was opened");
     issueHasPr(octokit, owner, repo, context.ref.split("/")[2]);
     return;
   }
 
-  // ref for a normal push looks like "refs/heads/branch-name"
-  // so in this case, "refs/heads/issue/123-branch" or "refs/heads/release/0.1.2"
   const branchType = context.ref.split("/")[2];
   const fullBranchName = context.ref.replace("refs/heads/", "");
-  const suffixBranchName = context.ref.split("/")[3];
 
   switch (branchType) {
     case "release":
       console.log("Release branch discovered.");
-      completedIssue(octokit, owner, repo, fullBranchName);
+      issueCompleted(octokit, owner, repo, fullBranchName);
       break;
     case "issue":
       console.log("Issue branch discovered.");
-      if (event === "create") {
+      if (context.eventName === "create") {
         issueInProgress(octokit, owner, repo, fullBranchName);
       }
       break;
@@ -98,7 +83,7 @@ async function issueInProgress(octokit, owner, repo, fullBranchName) {
   addLabelToIssue(octokit, owner, repo, issueNumber, "status:in_progress");
 }
 
-async function completedIssue(octokit, owner, repo, fullBranchName) {
+async function issueCompleted(octokit, owner, repo, fullBranchName) {
   let commitMessage;
   let issueNumber;
 
